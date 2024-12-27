@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=${DATABASE_URL} # Load from .env file
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/usr/src/app
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER} # Load from .env file
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Load from .env file
+      POSTGRES_DB: ${POSTGRES_DB} # Load from .env file
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/usr/src/app
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
