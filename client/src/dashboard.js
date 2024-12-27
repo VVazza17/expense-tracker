@@ -1,106 +1,111 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 
-const Dashboard = () => {
+function Dashboard() {
   const [expenses, setExpenses] = useState([]);
-  const [formData, setFormData] = useState({
-    user_id: '',
+  const [currentExpense, setCurrentExpense] = useState({
+    userId: '',
     category: '',
     description: '',
     amount: '',
   });
+  const [editingIndex, setEditingIndex] = useState(null);
 
-  // Fetch expenses from the backend
-  useEffect(() => {
-    fetchExpenses();
-  }, []);
-
-  const fetchExpenses = async () => {
-    try {
-      const res = await axios.get('/expenses');
-      setExpenses(res.data);
-    } catch (err) {
-      console.error('Error fetching expenses:', err);
-    }
-  };
-
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setCurrentExpense({ ...currentExpense, [name]: value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post('/expenses', formData);
-      fetchExpenses(); // Refresh the expenses list
-      setFormData({ user_id: '', category: '', description: '', amount: '' });
-    } catch (err) {
-      console.error('Error adding expense:', err);
+  const handleAddExpense = () => {
+    if (editingIndex !== null) {
+      // Update existing expense
+      const updatedExpenses = expenses.map((expense, index) =>
+        index === editingIndex ? currentExpense : expense
+      );
+      setExpenses(updatedExpenses);
+      setEditingIndex(null);
+    } else {
+      // Add new expense
+      setExpenses([...expenses, { ...currentExpense }]);
     }
+    clearForm();
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`/expenses/${id}`);
-      fetchExpenses(); // Refresh the expenses list
-    } catch (err) {
-      console.error('Error deleting expense:', err);
-    }
+  const handleDeleteExpense = (index) => {
+    setExpenses(expenses.filter((_, i) => i !== index));
+  };
+
+  const handleEditExpense = (index) => {
+    setCurrentExpense(expenses[index]);
+    setEditingIndex(index);
+  };
+
+  const clearForm = () => {
+    setCurrentExpense({ userId: '', category: '', description: '', amount: '' });
   };
 
   return (
     <div>
       <h1>Expenses Dashboard</h1>
-
-      {/* Form to Add a New Expense */}
-      <form onSubmit={handleSubmit}>
+      <div>
         <input
-          type="number"
-          name="user_id"
+          type="text"
+          name="userId"
           placeholder="User ID"
-          value={formData.user_id}
-          onChange={handleChange}
-          required
+          value={currentExpense.userId}
+          onChange={handleInputChange}
         />
         <input
           type="text"
           name="category"
           placeholder="Category"
-          value={formData.category}
-          onChange={handleChange}
-          required
+          value={currentExpense.category}
+          onChange={handleInputChange}
         />
         <input
           type="text"
           name="description"
           placeholder="Description"
-          value={formData.description}
-          onChange={handleChange}
+          value={currentExpense.description}
+          onChange={handleInputChange}
         />
         <input
           type="number"
-          step="0.01"
           name="amount"
           placeholder="Amount"
-          value={formData.amount}
-          onChange={handleChange}
-          required
+          value={currentExpense.amount}
+          onChange={handleInputChange}
         />
-        <button type="submit">Add Expense</button>
-      </form>
-
-      {/* Display List of Expenses */}
-      <ul>
-        {expenses.map((expense) => (
-          <li key={expense.id}>
-            <strong>{expense.category}</strong>: ${expense.amount}{' '}
-            <button onClick={() => handleDelete(expense.id)}>Delete</button>
-          </li>
-        ))}
-      </ul>
+        <button onClick={handleAddExpense}>
+          {editingIndex !== null ? 'Update Expense' : 'Add Expense'}
+        </button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>User ID</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {expenses.map((expense, index) => (
+            <tr key={index}>
+              <td>{expense.userId}</td>
+              <td>{expense.category}</td>
+              <td>{expense.description}</td>
+              <td>{expense.amount}</td>
+              <td>
+                <button onClick={() => handleEditExpense(index)}>Edit</button>
+                <button onClick={() => handleDeleteExpense(index)}>Delete</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
-};
+}
 
 export default Dashboard;
